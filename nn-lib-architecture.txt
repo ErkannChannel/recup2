@@ -1,0 +1,193 @@
+// Architecture of the nn C-lib
+
+Model :
+  Model *
+    - (nn_Layer**) layers
+    - (size_t) num_layers
+    - (functions->losses) loss
+    - (functions->optimizers) optimizer
+    - ($void) save // save_architecture & save_weights_and_bias
+    - ($void) saveArchitecture
+    - ($void) saveWeightsAndBias
+  ($void) nn_loadModel
+  Layers :
+    Layer *
+      - (bool) is_output
+      - (utils->Struct->ShapeDescription) shape
+      - (activation) activation
+      - (linked-list-Node) nodes
+    Node *
+     - (uint) num_weights
+     - (double-array) weights //il pointe vers le layer d'avant
+     - (uint) num_bias
+     - (double) bias
+Data :
+  DataCollection *
+    - (InOutTuple - linked-list) data
+    ($void) loadDataCollection
+    ($void) freeDataCollection
+  DataTuple *
+    - (Data) data1
+    - (Data) data2
+  Data *
+    - (DataCollection) data_collection
+    - ($DataTuple) splitTrainTest
+    ($Data) createData
+    ($void) freeData
+  InOutTuple *
+    - (Sample) input
+    - (Sample) output
+  InitData -> initialize data structure
+
+Session :
+  Session *
+    - (Data) data
+    - (uint) num_epochs
+    - (double) loss_threshold
+    - (bool) stop_on_loss_threshold_reached
+    - (bool) verbose
+    - ($void) train
+    - ($nn_TestResult) test
+  nn_TestResult *
+    - (double) min_loss
+    - (double) avg_loss
+    - (double) max_loss
+    - (double) percentage // % of good results
+
+Sample:
+  Sample *
+    - (utils->Struct->ShapeDescription) shape
+    - (double array) values
+
+FunctionsDescriptor :       //functions that will be applied on model(or for stats)
+  losses +       //taux d'erreurs
+    CategoricalCrossentropy
+    BinaryCrossentropy
+    SparseCategoricalCrossentropy
+  activations +
+    sigmoid
+    relu
+    leaky_relu    //optional
+    softmax
+    tanh
+  optimizers +
+    RMSprop
+    Adam
+
+utils :
+  Struct :
+    ShapeDescription *
+      - (uint) dims
+      - (uint) x
+      - (uint) y
+      - (uint) z
+    DataSet *
+      - (Data) train
+      - (Data) test
+    ($DataSet*) createDataSet
+    ($void) freeDataSet
+    iot_linked_list *
+      ...library designed by nico
+  Misc :
+    // randomness
+    ($void) nn_initRandom
+    ($double) getRandomDouble
+    ($double) getNormalizedRandomDouble
+    ($double) getNormalizedPositiveRandomDouble
+  Session :
+    evaluate.h/c
+    - ($void) forward_propagation
+    - ($void) backwards_propagation
+    Functions :
+      losses :
+        ($double) CategoricalCrossentropy
+        ($double) BinaryCrossentropy
+        ($double) SparseCategoricalCrossentropy
+      activations :
+        ($double) sigmoid
+        ($double) relu
+        ($double) leaky_relu    //optional
+        ($double) softmax
+        ($double) tanh
+      optimizers :
+        ($void) RMSprop
+        ($void) Adam
+
+/* Norme d'ecriture */
+
+Struct    : CamelCase (nn_[StructName])
+Enum      : FULLCAPS (ENUMVARIABLE) && pascalCase for Name (enum.ENUMVARIABLE)
+Function  : pascalCase (functionName)
+Variable  : snake_case (variable_name)
+Constant (define prepo) : FULLCAPS
+
+/* Vocab */
+* : Struct
++ : enum
+$ : function
+
+
+
+/* data file format */
+input file content :
+{dims} {n} {x} {y} {z}
+{data1}
+{data2}
+...
+{datan}
+
+output file content is same format as input file
+
+/* File Architecture */
+Model :
+  Model * model.h/c
+  Layers :
+    ModelLayers * model->layers.h/c
+    Layer * layer.h/c
+
+Data :
+  DataCollectionTuple * data_collection_tuple.h/c
+  DataCollection * data_collection.h/c
+  Data * data.h/c
+
+Session :
+  Session * session.h/c
+
+FunctionsDescriptor :
+  functions_descriptors_enums.h/c
+
+utils :
+  Struct :
+    ShapeDescription * shape_description.h/c
+    linked_list * linked_list.h/c
+  Misc :
+    randomness.h/c
+  Session:
+    evaluate.h/c
+    Functions :
+      losses.h/c
+      activations.h/c
+      optimizers.h/c
+
+
+//
+
+
+
+
+for (int = 0; i < hidden_layer.length; i++) {
+  double sum = 0;
+  for (int j = 0; j < layers[0].length: j++) {
+    sum += hidden_layer.nodes[i].weights[j] * layers[0].nodes[j].value;
+  }
+  hidden_layer.nodes[i].raw_value = sum + hidden_layer.bias[i];
+  // NO ! must activate whole layer at once (bc of softmax & co.)
+  /*
+  hidden_layer.nodes[i].value = hidden_layer->activation(hidden_layer.raw_value);
+  // value = sigmoid(raw_value)
+  */
+}
+actiateWholeLayer(hidden_layer)
+
+
+//

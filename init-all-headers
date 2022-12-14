@@ -1,0 +1,5 @@
+#!/bin/sh
+for file in $(find . -type f -name "*.h")
+do
+	python3.9 init-header.py "$file"
+done
